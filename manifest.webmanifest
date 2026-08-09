@@ -1,0 +1,11 @@
+{
+  "name": "CaptaPro Analytics",
+  "short_name": "CaptaPro",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#080a0f",
+  "theme_color": "#0b0d12",
+  "lang": "pt-BR",
+  "description": "Dashboard comercial 360° do CaptaPro"
+}
