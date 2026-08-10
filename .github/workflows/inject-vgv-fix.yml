@@ -1,0 +1,28 @@
+name: Inject VGV correction
+on:
+  push:
+    paths:
+      - 'fluxohub-correct.js'
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inject correction script
+        run: |
+          python - <<'PY'
+          p='index.html'
+          s=open(p,encoding='utf-8').read()
+          tag='<script src="./fluxohub-correct.js?v=3"></script>'
+          if 'fluxohub-correct.js' not in s:
+              s=s.replace('</body>',tag+'\n</body>')
+              open(p,'w',encoding='utf-8').write(s)
+          PY
+      - name: Commit
+        run: |
+          git config user.name 'raphaelbuenocaptacao-creator'
+          git config user.email 'raphaelbueno.captacao@gmail.com'
+          git add index.html
+          git diff --cached --quiet || (git commit -m 'fix: aplicar cálculo correto de VGV' && git push)
