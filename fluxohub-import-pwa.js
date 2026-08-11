@@ -1,0 +1,14 @@
+(function(){
+'use strict';
+const KEY='fluxohubImportedDataV2';
+const originalFetch=window.fetch.bind(window);
+function isData(url){try{return new URL(url,location.href).pathname.endsWith('/data.json')}catch(e){return String(url).includes('data.json')}}
+const saved=localStorage.getItem(KEY);
+if(saved){window.fetch=function(input,init){const url=typeof input==='string'?input:(input&&input.url)||'';if(isData(url))return Promise.resolve(new Response(saved,{status:200,headers:{'Content-Type':'application/json'}}));return originalFetch(input,init);};}
+function loadSheetJS(){return new Promise((resolve,reject)=>{if(window.XLSX)return resolve();const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';s.onload=resolve;s.onerror=reject;document.head.appendChild(s);});}
+function validRows(rows){if(!Array.isArray(rows)||!rows.length)return false;const keys=Object.keys(rows[0]||{}).map(k=>String(k).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase());return keys.some(k=>/(valor vendido|vgv|valor venda|promotor|data de atendimento|data|atendimento)/.test(k));}
+async function handle(file){try{await loadSheetJS();const buf=await file.arrayBuffer();const wb=XLSX.read(buf,{type:'array',cellDates:true,raw:false});const ws=wb.Sheets[wb.SheetNames[0]];const rows=XLSX.utils.sheet_to_json(ws,{defval:'',raw:false});if(!validRows(rows))throw new Error('A planilha não possui colunas reconhecidas pelo FluxoHub.');const nonempty=rows.filter(r=>Object.values(r).some(v=>String(v??'').trim()!=='')).length;if(nonempty<1)throw new Error('A planilha está vazia.');localStorage.setItem(KEY,JSON.stringify(rows));location.reload();}catch(e){console.error(e);alert('Importação não realizada. '+e.message+'\n\nOs dados atuais foram preservados.');}}
+function installImport(){const input=document.getElementById('file');const btn=document.getElementById('importBtn');if(!input||!btn)return;input.setAttribute('accept','.csv,.xlsx,.xls');btn.textContent='Importar Excel/CSV';input.addEventListener('change',function(e){e.stopImmediatePropagation();const f=e.target.files&&e.target.files[0];if(f)handle(f);input.value='';},true);}
+function installPWA(){let deferred=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;});const btn=document.getElementById('installPWA');if(!btn)return;btn.style.display='inline-flex';btn.addEventListener('click',async()=>{if(deferred){deferred.prompt();try{await deferred.userChoice;}finally{deferred=null;}return;}alert('A instalação automática não está disponível neste momento. No Chrome, use o ícone de instalação na barra de endereço ou o menu ⋮ > Instalar FluxoHub.');});}
+function boot(){installImport();installPWA();}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+})();
