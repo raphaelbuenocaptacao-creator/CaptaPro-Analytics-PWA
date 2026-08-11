@@ -1,71 +1,33 @@
 (function(){
 'use strict';
 
-function installButton(){
-  if(document.getElementById('installPwa')) return;
-  const actions=document.querySelector('.actions');
-  if(!actions) return;
-  const b=document.createElement('button');
-  b.id='installPwa';
-  b.className='btn primary';
-  b.textContent='📲 Instalar App';
-  b.hidden=true;
-  actions.insertBefore(b,actions.firstChild);
-  let deferred=null;
-  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;b.hidden=false;});
-  b.addEventListener('click',async()=>{
-    if(!deferred){alert('Para instalar: abra o menu do navegador e escolha “Instalar app” ou “Adicionar à tela inicial”.');return;}
-    deferred.prompt();
-    try{await deferred.userChoice;}catch(e){}
-    deferred=null;b.hidden=true;
-  });
-  window.addEventListener('appinstalled',()=>{b.hidden=true;});
+var OFFICIAL_VGV=61700089.96, FALLBACK_DATA=[];
+function $id(id){return document.getElementById(id)}
+function money(v){return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v)||0)}
+function num(v){return new Intl.NumberFormat('pt-BR').format(Number(v)||0)}
+function pct(v){return (Number(v)||0).toLocaleString('pt-BR',{maximumFractionDigits:1})+'%'}
+function val(v){if(v==null||v==='')return 0;if(typeof v==='number')return Number.isFinite(v)?v:0;var s=String(v).trim().replace(/R\$/gi,'').replace(/\s/g,'');if(s.indexOf(',')>=0&&s.indexOf('.')>=0)s=s.replace(/\./g,'').replace(',','.');else if(s.indexOf(',')>=0)s=s.replace(',','.');return Number(s.replace(/[^0-9.-]/g,''))||0}
+function date(v){var s=String(v||'').trim(),m=s.match(/(\d{2})\/(\d{2})\/(\d{4})/);return m?m[3]+'-'+m[2]+'-'+m[1]:(/^\d{4}-\d{2}-\d{2}/.test(s)?s.slice(0,10):'')}
+function prep(r){r=Object.assign({},r);r._date=date(r['Data de atendimento']);r._v=val(r['Valor vendido']);r._q=String(r['Qualificação']||'').trim().toUpperCase();return r}
+function dataRows(){return FALLBACK_DATA}
+function current(){var a=dataRows(),s=$id('start')?.value,e=$id('end')?.value,p=$id('promotor')?.value,l=$id('liner')?.value,c=$id('closer')?.value,o=$id('local')?.value;return a.filter(function(x){return(!s||x._date>=s)&&(!e||x._date<=e)&&(!p||x['Promotor de marketing']===p)&&(!l||x.Liner===l)&&(!c||x.Closer===c)&&(!o||x['Local Captação']===o)})}
+function fill(id,key){var el=$id(id);if(!el)return;var set={};dataRows().forEach(function(x){var v=String(x[key]||'').trim();if(v)set[v]=1});el.innerHTML='<option value="">Todos</option>'+Object.keys(set).sort(function(a,b){return a.localeCompare(b,'pt-BR')}).map(function(v){return '<option value="'+esc(v)+'">'+esc(v)+'</option>'}).join('')}
+function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]})}
+function renderFallback(){var a=current(),s=a.filter(function(x){return x._v>0}),v=s.reduce(function(t,x){return t+x._v},0),q=a.filter(function(x){return x._q==='Q'||x._q.indexOf('Q ')===0}).length,nq=a.filter(function(x){return x._q==='NQ'||x._q.indexOf('NQ')===0}).length,conv=a.length?s.length/a.length*100:0,t=s.length?v/s.length:0;
+  if($id('vgv'))$id('vgv').textContent=money(v);if($id('vgvSub'))$id('vgvSub').textContent=num(s.length)+' vendas · '+pct(conv)+' conversão';if($id('casais'))$id('casais').textContent=num(a.length);if($id('vendas'))$id('vendas').textContent=num(s.length);if($id('conv'))$id('conv').textContent=pct(conv);if($id('convSub'))$id('convSub').textContent='Q: '+num(q)+' · NQ: '+num(nq);if($id('ticket'))$id('ticket').textContent=money(t);if($id('vgvCasal'))$id('vgvCasal').textContent=money(a.length?v/a.length:0);
+  var check=$id('vgvCheck');if(!check){check=document.createElement('div');check.id='vgvCheck';var card=$id('vgv')&&$id('vgv').closest('.card');if(card)card.appendChild(check)}if(check){var filtered=$id('promotor')?.value||$id('liner')?.value||$id('closer')?.value||$id('local')?.value||false;check.className=filtered?'info':(Math.abs(v-OFFICIAL_VGV)<=.01?'info':'alert');check.innerHTML=filtered?'ℹ️ VGV do filtro atual: <b>'+money(v)+'</b>':'✓ VGV conferido · <b>'+money(v)+'</b> · Oficial: '+money(OFFICIAL_VGV)}
+  var groups={};a.forEach(function(x){var k=x['Promotor de marketing']||'Não informado';if(!groups[k])groups[k]={name:k,v:0,s:0,a:0};groups[k].a++;groups[k].v+=x._v;if(x._v>0)groups[k].s++});var arr=Object.keys(groups).map(function(k){var z=groups[k];z.conv=z.a?z.s/z.a*100:0;return z}).sort(function(x,y){return y.v-x.v});
+  var html='<div class="tablewrap"><table><thead><tr><th>#</th><th>PROMOTOR</th><th>VGV</th><th>VENDAS</th><th>CONVERSÃO</th><th>ATENDIMENTOS</th></tr></thead><tbody>'+arr.map(function(x,i){return '<tr><td>'+ (i+1)+'</td><td>'+esc(x.name)+'</td><td class="money">'+money(x.v)+'</td><td>'+num(x.s)+'</td><td>'+pct(x.conv)+'</td><td>'+num(x.a)+'</td></tr>'}).join('')+'</tbody></table></div>';
+  if($id('rankingTable'))$id('rankingTable').innerHTML=html;if($id('rankingFull'))$id('rankingFull').innerHTML=html;if($id('teamTable'))$id('teamTable').innerHTML=html;
+  if($id('alerts'))$id('alerts').innerHTML=conv<20?'<div class="alert">⚠️ <b>Conversão abaixo de 20%.</b> Revise abordagem e qualificação.</div>':'<div class="info">✓ Conversão atual: <b>'+pct(conv)+'</b></div>';
+  if($id('funnel'))$id('funnel').innerHTML='<div class="funnelrow"><div class="funnelbar">ABORDAGENS</div><div class="ftxt">'+num(a.length)+'</div></div><div class="funnelrow"><div class="funnelbar q">QUALIFICADOS</div><div class="ftxt">'+num(q)+'</div></div><div class="funnelrow"><div class="funnelbar s">VENDAS</div><div class="ftxt">'+num(s.length)+'</div></div>';if($id('funnel2'))$id('funnel2').innerHTML=$id('funnel')?.innerHTML||'';
+  if($id('dataTable'))$id('dataTable').innerHTML='<div class="tablewrap"><table><thead><tr><th>Data</th><th>Promotor</th><th>Cliente</th><th>Q/NQ</th><th>VGV</th><th>Local</th></tr></thead><tbody>'+a.slice(0,300).map(function(x){return '<tr><td>'+esc(x['Data de atendimento'])+'</td><td>'+esc(x['Promotor de marketing'])+'</td><td>'+esc(x['Nome 1'])+'</td><td>'+esc(x['Qualificação'])+'</td><td class="money">'+money(x._v)+'</td><td>'+esc(x['Local Captação'])+'</td></tr>'}).join('')+'</tbody></table></div>';
 }
-
-function visual(){
-  if(document.getElementById('fluxohub-final-ui'))return;
-  const style=document.createElement('style');
-  style.id='fluxohub-final-ui';
-  style.textContent=`
-    .actions #installPwa{box-shadow:0 8px 22px #1683ff44;font-weight:800}
-    #page-visao .grid > .card:first-child{grid-column:span 8!important;min-height:390px}
-    #page-visao .grid > .card:nth-child(2){grid-column:span 4!important;min-height:390px}
-    #page-visao .grid > .card:first-child .chart{height:335px;margin-top:8px}
-    #page-visao .grid > .card:first-child .title{font-size:15px}
-    #page-visao .grid > .card:first-child .subtitle{font-size:11px}
-    #page-visao .grid > .card:nth-child(3){grid-column:span 8!important}
-    #page-visao .grid > .card:nth-child(4){grid-column:span 4!important}
-    .nav button,.mobilebar button,.tab,.actions button{position:relative;z-index:60;pointer-events:auto}
-    @media(max-width:1150px){#page-visao .grid > .card:first-child,#page-visao .grid > .card:nth-child(2),#page-visao .grid > .card:nth-child(3),#page-visao .grid > .card:nth-child(4){grid-column:span 12!important}}
-    @media(max-width:700px){#page-visao .grid > .card:first-child,#page-visao .grid > .card:nth-child(2){min-height:0}#page-visao .grid > .card:first-child .chart{height:290px}.actions #installPwa{display:inline-block!important}}
-  `;
-  document.head.appendChild(style);
-}
-
-function navigationFix(){
-  if(window.__fluxohubNavigationFix)return;
-  window.__fluxohubNavigationFix=true;
-  const titles={visao:'Visão 360°',equipe:'Equipe',funil:'Funil de Vendas',ranking:'Ranking',operacao:'Operação',perfil:'Perfil do Cliente',alertas:'Alertas',dados:'Dados',xp:'XP BMW GAME'};
-  document.addEventListener('click',function(e){
-    const btn=e.target.closest('[data-page]');
-    if(!btn)return;
-    e.preventDefault();e.stopPropagation();
-    const page=btn.dataset.page;
-    document.querySelectorAll('[data-page]').forEach(x=>x.classList.toggle('active',x===btn || x.dataset.page===page));
-    document.querySelectorAll('main section[id^="page-"]').forEach(s=>{s.hidden=s.id!=='page-'+page;});
-    const title=document.getElementById('pageTitle');
-    if(title)title.textContent=titles[page]||'FluxoHub';
-    if(page==='xp'&&typeof window.renderXP==='function')window.renderXP();
-    window.scrollTo({top:0,behavior:'smooth'});
-  },true);
-  document.addEventListener('click',function(e){
-    const rank=e.target.closest('[data-rank]');
-    if(rank){e.preventDefault();e.stopPropagation();document.querySelectorAll('[data-rank]').forEach(x=>x.classList.toggle('active',x===rank));return;}
-    const close=e.target.closest('.close,[data-close]');
-    if(close){const m=document.getElementById('modal');if(m)m.classList.remove('open');}
-  },true);
-}
-
-function boot(){visual();installButton();navigationFix();}
+function navigation(){var titles={visao:'Visão 360°',equipe:'Equipe',funil:'Funil de Vendas',ranking:'Ranking',operacao:'Operação',perfil:'Perfil do Cliente',alertas:'Alertas',dados:'Dados',xp:'XP BMW GAME'};document.addEventListener('click',function(e){var b=e.target.closest('[data-page]');if(!b)return;e.preventDefault();var p=b.dataset.page;document.querySelectorAll('[data-page]').forEach(function(x){x.classList.toggle('active',x.dataset.page===p)});document.querySelectorAll('main section[id^="page-"]').forEach(function(s){s.hidden=s.id!=='page-'+p});if($id('pageTitle'))$id('pageTitle').textContent=titles[p]||'FluxoHub';renderFallback();window.scrollTo(0,0)},true)}
+function controls(){['start','end','promotor','liner','closer','local'].forEach(function(id){var e=$id(id);if(e)e.addEventListener('change',renderFallback)});if($id('reset'))$id('reset').addEventListener('click',function(){['promotor','liner','closer','local'].forEach(function(id){if($id(id))$id(id).value=''});var ds=dataRows().map(function(x){return x._date}).filter(Boolean).sort();if($id('start'))$id('start').value=ds[0]||'';if($id('end'))$id('end').value=ds[ds.length-1]||'';renderFallback()})}
+function style(){if($id('fluxohub-final-safe'))return;var s=document.createElement('style');s.id='fluxohub-final-safe';s.textContent='.nav button,.mobilebar button,.tab,.btn,.field,.field select,.field input{pointer-events:auto!important;position:relative;z-index:100}.nav{position:relative;z-index:100}.actions{position:relative;z-index:101}#page-visao .grid>.card:first-child{grid-column:span 8!important;min-height:390px}#page-visao .grid>.card:first-child .chart{height:335px}@media(max-width:1150px){#page-visao .grid>.card:first-child{grid-column:span 12!important}}@media(max-width:700px){#page-visao .grid>.card:first-child .chart{height:280px}}';document.head.appendChild(s)}
+function install(){if($id('installPwa'))return;var a=document.querySelector('.actions');if(!a)return;var b=document.createElement('button');b.id='installPwa';b.className='btn primary';b.textContent='📲 Instalar App';a.insertBefore(b,a.firstChild);var deferred=null;window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferred=e;b.hidden=false});b.addEventListener('click',async function(){if(!deferred){alert('Abra o menu do navegador e escolha “Instalar app” ou “Adicionar à tela inicial”.');return}deferred.prompt();try{await deferred.userChoice}catch(e){}deferred=null;b.hidden=true})}
+async function load(){try{var r=await fetch('./data.json?safe='+Date.now(),{cache:'no-store'});if(!r.ok)throw Error('data.json '+r.status);var j=await r.json();FALLBACK_DATA=(Array.isArray(j)?j:(j.data||j.rows||[])).map(prep);var ds=FALLBACK_DATA.map(function(x){return x._date}).filter(Boolean).sort();if($id('start'))$id('start').value=ds[0]||'';if($id('end'))$id('end').value=ds[ds.length-1]||'';fill('promotor','Promotor de marketing');fill('liner','Liner');fill('closer','Closer');fill('local','Local Captação');renderFallback()}catch(e){console.error('FluxoHub:',e)}}
+function boot(){style();navigation();controls();install();load()}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
