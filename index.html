@@ -21,7 +21,7 @@
 <header class="top">
   <div class="logo"><div class="mark">F</div><div class="brand">FLUXOHUB<small>ANALYTICS 360°</small></div></div>
   <div><h1 id="pageTitle">Visão 360°</h1><div class="desc">Panorama geral de todo o desempenho comercial</div></div>
-  <div class="actions"><button class="btn" id="reset">Limpar filtros</button><button class="btn" id="export">Exportar</button><button class="btn primary" id="importBtn">Importar CSV</button><input hidden id="file" type="file" accept=".csv"></div>
+  <div class="actions"><button class="btn" id="reset">Limpar filtros</button><button class="btn" id="export">Exportar</button><button class="btn" id="installPWA">Instalar PWA</button><button class="btn primary" id="importBtn">Importar Excel/CSV</button><input hidden id="file" type="file" accept=".csv"></div>
 </header>
 <div class="layout">
 <aside><nav class="nav">
@@ -119,4 +119,5 @@ if ('serviceWorker' in navigator) {
 <script src="./fix.js"></script>
 <script src="ui-tweak.js"></script>
 <script src="./app.js?v=1" defer></script>
+<script src="fluxohub-import-pwa.js"></script>
 </body></html>
