@@ -1,0 +1,32 @@
+name: Install FluxoHub application engine
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  install:
+    if: ${{ !contains(github.event.head_commit.message, '[app-engine]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install app engine in index
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          tag='<script src="./app.js?v=1" defer></script>'
+          if tag not in s:
+              pos=s.lower().rfind('</body>')
+              if pos<0: raise SystemExit('index.html has no </body>')
+              s=s[:pos]+tag+'\n'+s[pos:]
+              p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit installed engine
+        run: |
+          git config user.name 'raphaelbuenocaptacao-creator'
+          git config user.email 'raphaelbueno.captacao@gmail.com'
+          git add index.html
+          git diff --cached --quiet || git commit -m 'Install single FluxoHub application engine [app-engine]'
+          git push
