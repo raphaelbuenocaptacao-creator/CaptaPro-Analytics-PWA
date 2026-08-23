@@ -1,6 +1,6 @@
 {
-  "name": "FluxoHub Analytics 360°",
-  "short_name": "FluxoHub",
+  "name": "CAPTAUP Resultados 360°",
+  "short_name": "CAPTAUP",
   "id": "./",
   "start_url": "./",
   "scope": "./",
@@ -9,7 +9,7 @@
   "background_color": "#080a0f",
   "theme_color": "#070a0f",
   "lang": "pt-BR",
-  "description": "Dashboard comercial 360° do FluxoHub",
+  "description": "Dashboard de performance comercial e captação do CAPTAUP",
   "icons": [
     {
       "src": "./icon.svg",
