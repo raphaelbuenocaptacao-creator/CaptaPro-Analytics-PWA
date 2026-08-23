@@ -1,4 +1,4 @@
-const CACHE = "fluxohub-v9";
+const CACHE = "captaup-v10";
 const APP_SHELL = ["./index.html", "./manifest.webmanifest", "./icon.svg", "./app.js", "./data-latest.json", "./gifts.json"];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())));
