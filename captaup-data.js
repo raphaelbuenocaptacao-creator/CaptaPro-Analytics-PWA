@@ -2,13 +2,25 @@
 'use strict';
 let annualPromise=null;
 let pakoPromise=null;
-const VERSION='20260823-android-fix2';
+const VERSION='20260823-android-fix3';
 const LOCAL_PAKO=['vendor/pako.part1.txt','vendor/pako.part2.txt','vendor/pako.part3.txt'];
 
 function stage(text){
   window.__captaupDataStage=text;
   const el=document.getElementById('loadStatus');
-  if(el&&(!el.textContent||/carregando|erro/i.test(el.textContent)))el.textContent=text;
+  if(el&&(!el.textContent||/carregando|erro|preparando|baixando|abrindo/i.test(el.textContent)))el.textContent=text;
+}
+function showTechnicalError(err){
+  const msg=String(err&&err.message||err||'ERRO_DESCONHECIDO');
+  window.__captaupDataError=msg;
+  stage('Erro na base: '+msg);
+  setTimeout(()=>{
+    const main=document.querySelector('main');
+    if(!main)return;
+    let box=document.getElementById('captaupDataDiagnostic');
+    if(!box){box=document.createElement('div');box.id='captaupDataDiagnostic';box.className='info';main.insertBefore(box,main.firstChild);}
+    box.innerHTML='<b>Diagnóstico da base:</b> '+msg;
+  },0);
 }
 
 async function ensurePako(){
@@ -30,9 +42,7 @@ async function ensurePako(){
       script.text=code;
       document.head.appendChild(script);
       script.remove();
-    }catch(err){
-      throw new Error('DESCOMPACTADOR_LOCAL_EXECUCAO: '+(err&&err.message||err));
-    }
+    }catch(err){throw new Error('DESCOMPACTADOR_LOCAL_EXECUCAO: '+(err&&err.message||err));}
     if(!window.pako||typeof window.pako.ungzip!=='function')throw new Error('DESCOMPACTADOR_LOCAL_NAO_INICIALIZOU');
     return window.pako;
   })();
@@ -63,7 +73,6 @@ async function loadCaptaUpAnnual(){
       return manifest;
     }
     if(!Array.isArray(manifest.chunks)||!manifest.chunks.length)throw new Error('MANIFESTO_SEM_BLOCOS');
-
     stage('Baixando dados anuais...');
     const parts=[];
     for(const file of manifest.chunks){
@@ -73,13 +82,11 @@ async function loadCaptaUpAnnual(){
       if(!txt)throw new Error('BLOCO_VAZIO_'+file);
       parts.push(txt);
     }
-
     const b64=parts.join('');
     let bin;
     try{bin=atob(b64);}catch(err){throw new Error('BASE64_INVALIDO');}
     const bytes=new Uint8Array(bin.length);
     for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
-
     const text=await decodeGzip(bytes);
     let data;
     try{data=JSON.parse(text);}catch(err){throw new Error('JSON_ANUAL_INVALIDO: '+(err&&err.message||err));}
@@ -89,8 +96,7 @@ async function loadCaptaUpAnnual(){
     stage('Base anual pronta');
     return data;
   })();
-  try{return await annualPromise;}catch(err){annualPromise=null;stage('Erro na base anual');throw err;}
+  try{return await annualPromise;}catch(err){annualPromise=null;showTechnicalError(err);throw err;}
 }
-
 window.loadCaptaUpAnnual=loadCaptaUpAnnual;
 })();
