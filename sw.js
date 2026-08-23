@@ -1,5 +1,5 @@
-const CACHE = "fluxohub-v8";
-const APP_SHELL = ["./index.html", "./manifest.webmanifest", "./icon.svg", "./app.js"];
+const CACHE = "fluxohub-v9";
+const APP_SHELL = ["./index.html", "./manifest.webmanifest", "./icon.svg", "./app.js", "./data-latest.json", "./gifts.json"];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())));
 self.addEventListener("fetch", event => {
@@ -14,7 +14,7 @@ self.addEventListener("fetch", event => {
     event.respondWith(networkFirst());
     return;
   }
-  if(url.pathname.endsWith("/data.json") || url.pathname.endsWith("/data-latest.json") || url.pathname.endsWith(".js") || url.pathname.endsWith(".css") || url.pathname.endsWith(".webmanifest")){
+  if(url.pathname.endsWith(".json") || url.pathname.endsWith(".js") || url.pathname.endsWith(".css") || url.pathname.endsWith(".webmanifest")){
     event.respondWith(networkFirst());
     return;
   }
