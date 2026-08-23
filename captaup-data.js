@@ -1,71 +1,95 @@
 (function(){
 'use strict';
 let annualPromise=null;
-const VERSION='20260823-android-fix1';
+let pakoPromise=null;
+const VERSION='20260823-android-fix2';
+const LOCAL_PAKO=['vendor/pako.part1.txt','vendor/pako.part2.txt','vendor/pako.part3.txt'];
+
+function stage(text){
+  window.__captaupDataStage=text;
+  const el=document.getElementById('loadStatus');
+  if(el&&(!el.textContent||/carregando|erro/i.test(el.textContent)))el.textContent=text;
+}
 
 async function ensurePako(){
   if(window.pako&&typeof window.pako.ungzip==='function')return window.pako;
-  await new Promise((resolve,reject)=>{
-    const existing=document.getElementById('captaup-pako');
-    if(existing){
-      existing.addEventListener('load',resolve,{once:true});
-      existing.addEventListener('error',()=>reject(new Error('Falha ao carregar descompactador compatível.')),{once:true});
-      return;
+  if(pakoPromise)return pakoPromise;
+  pakoPromise=(async()=>{
+    stage('Preparando base anual...');
+    const parts=[];
+    for(const file of LOCAL_PAKO){
+      const r=await fetch('./'+file+'?v='+VERSION,{cache:'no-store'});
+      if(!r.ok)throw new Error('DESCOMPACTADOR_LOCAL_HTTP_'+r.status+'_'+file);
+      parts.push(await r.text());
     }
-    const s=document.createElement('script');
-    s.id='captaup-pako';
-    s.src='https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js';
-    s.async=true;
-    s.onload=resolve;
-    s.onerror=()=>reject(new Error('Falha ao carregar descompactador compatível.'));
-    document.head.appendChild(s);
-  });
-  if(!window.pako||typeof window.pako.ungzip!=='function')throw new Error('Descompactador não disponível.');
-  return window.pako;
+    const code=parts.join('');
+    if(code.length<22000)throw new Error('DESCOMPACTADOR_LOCAL_INCOMPLETO_'+code.length);
+    try{
+      const script=document.createElement('script');
+      script.id='captaup-pako-local';
+      script.text=code;
+      document.head.appendChild(script);
+      script.remove();
+    }catch(err){
+      throw new Error('DESCOMPACTADOR_LOCAL_EXECUCAO: '+(err&&err.message||err));
+    }
+    if(!window.pako||typeof window.pako.ungzip!=='function')throw new Error('DESCOMPACTADOR_LOCAL_NAO_INICIALIZOU');
+    return window.pako;
+  })();
+  try{return await pakoPromise;}catch(err){pakoPromise=null;throw err;}
 }
 
 async function decodeGzip(bytes){
-  if(typeof DecompressionStream!=='undefined'){
-    try{
-      const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
-      const text=await new Response(stream).text();
-      if(text&&text.trim().startsWith('{'))return text;
-    }catch(err){console.warn('CAPTAUP: descompactação nativa falhou, usando fallback.',err);}
-  }
+  stage('Abrindo 3.373 registros...');
   const pako=await ensurePako();
-  const out=pako.ungzip(bytes);
-  return new TextDecoder('utf-8').decode(out);
+  let out;
+  try{out=pako.ungzip(bytes);}catch(err){throw new Error('GZIP_FALHOU: '+(err&&err.message||err));}
+  try{return new TextDecoder('utf-8').decode(out);}catch(err){
+    let s='';
+    for(let i=0;i<out.length;i+=8192)s+=String.fromCharCode.apply(null,out.subarray(i,Math.min(out.length,i+8192)));
+    try{return decodeURIComponent(escape(s));}catch{return s;}
+  }
 }
 
 async function loadCaptaUpAnnual(){
   if(annualPromise)return annualPromise;
   annualPromise=(async()=>{
+    stage('Carregando base anual...');
     const mres=await fetch('./data-2026-full.json?v='+VERSION,{cache:'no-store'});
-    if(!mres.ok)throw new Error('Falha ao carregar data-2026-full.json: HTTP '+mres.status);
+    if(!mres.ok)throw new Error('MANIFESTO_HTTP_'+mres.status);
     const manifest=await mres.json();
-    if(manifest.encoding!=='gzip-base64-chunks')return manifest;
-    if(!Array.isArray(manifest.chunks)||!manifest.chunks.length)throw new Error('Manifesto anual sem blocos de dados.');
+    if(manifest.encoding!=='gzip-base64-chunks'){
+      if(!manifest||!Array.isArray(manifest.r))throw new Error('BASE_JSON_INVALIDA');
+      return manifest;
+    }
+    if(!Array.isArray(manifest.chunks)||!manifest.chunks.length)throw new Error('MANIFESTO_SEM_BLOCOS');
 
-    const parts=await Promise.all(manifest.chunks.map(async f=>{
-      const r=await fetch('./'+f+'?v='+VERSION,{cache:'no-store'});
-      if(!r.ok)throw new Error('Falha ao carregar '+f+': HTTP '+r.status);
-      return (await r.text()).replace(/\s+/g,'');
-    }));
+    stage('Baixando dados anuais...');
+    const parts=[];
+    for(const file of manifest.chunks){
+      const r=await fetch('./'+file+'?v='+VERSION,{cache:'no-store'});
+      if(!r.ok)throw new Error('BLOCO_HTTP_'+r.status+'_'+file);
+      const txt=(await r.text()).replace(/\s+/g,'');
+      if(!txt)throw new Error('BLOCO_VAZIO_'+file);
+      parts.push(txt);
+    }
 
     const b64=parts.join('');
     let bin;
-    try{bin=atob(b64);}catch(err){throw new Error('Base anual codificada de forma inválida.');}
+    try{bin=atob(b64);}catch(err){throw new Error('BASE64_INVALIDO');}
     const bytes=new Uint8Array(bin.length);
     for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
 
     const text=await decodeGzip(bytes);
-    const data=JSON.parse(text);
-    if(!data||!Array.isArray(data.r))throw new Error('Base anual inválida.');
-    if(manifest.records&&data.r.length!==manifest.records)throw new Error('Base anual incompleta: '+data.r.length+' de '+manifest.records+' registros.');
-    if(data.r.length!==3373)console.warn('CAPTAUP: quantidade anual diferente de 3373:',data.r.length);
+    let data;
+    try{data=JSON.parse(text);}catch(err){throw new Error('JSON_ANUAL_INVALIDO: '+(err&&err.message||err));}
+    if(!data||!Array.isArray(data.r))throw new Error('BASE_ANUAL_SEM_REGISTROS');
+    if(manifest.records&&data.r.length!==manifest.records)throw new Error('BASE_INCOMPLETA_'+data.r.length+'_DE_'+manifest.records);
+    if(data.r.length!==3373)throw new Error('TOTAL_ANUAL_DIVERGENTE_'+data.r.length);
+    stage('Base anual pronta');
     return data;
   })();
-  try{return await annualPromise;}catch(err){annualPromise=null;throw err;}
+  try{return await annualPromise;}catch(err){annualPromise=null;stage('Erro na base anual');throw err;}
 }
 
 window.loadCaptaUpAnnual=loadCaptaUpAnnual;
