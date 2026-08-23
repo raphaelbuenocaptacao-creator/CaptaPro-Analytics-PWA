@@ -1,5 +1,6 @@
 (function(){
 'use strict';
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=12-annual').catch(console.error));}
 let deferredPrompt=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;mountInstall();});
 window.addEventListener('appinstalled',()=>{const b=document.getElementById('installCaptaUp');if(b){b.textContent='App instalado';b.disabled=true;}});
