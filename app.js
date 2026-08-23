@@ -1,72 +1,37 @@
 (()=>{
 'use strict';
-const $=id=>document.getElementById(id);
-const qs=(s,r=document)=>Array.from(r.querySelectorAll(s));
-const state={rows:[],filtered:[],rank:'vgv',page:'visao',range:null};
-const money=n=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(n)||0);
-const num=n=>new Intl.NumberFormat('pt-BR').format(Number(n)||0);
-const pct=n=>((Number(n)||0)*100).toFixed(1).replace('.',',')+'%';
-const norm=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]||m));
-function number(v){if(typeof v==='number')return Number.isFinite(v)?v:0;let s=String(v??'').trim();if(!s)return 0;s=s.replace(/R\$|\s/g,'');if(s.includes('.')&&s.includes(','))s=s.replace(/\./g,'').replace(',','.');else if(s.includes(','))s=s.replace(',','.');const n=Number(s.replace(/[^0-9.-]/g,''));return Number.isFinite(n)?n:0}
-function date(v){if(!v)return '';let s=String(v).trim(),m=s.match(/^(\d{2})[\/.-](\d{2})[\/.-](\d{4})/);if(m)return `${m[3]}-${m[2]}-${m[1]}`;m=s.match(/^(\d{4})[\/.-](\d{2})[\/.-](\d{2})/);return m?`${m[1]}-${m[2]}-${m[3]}`:''}
-function val(o,keys){for(const k of keys)if(o&&o[k]!==undefined&&o[k]!==null&&o[k]!=='')return o[k];const nk=keys.map(norm);for(const k of Object.keys(o||{}))if(nk.includes(norm(k)))return o[k];return ''}
-function normalize(o){
- const vgv=number(val(o,['vgv','VGV','Valor vendido','valor_vendido','valor']));
- const status=String(val(o,['status','Status','Status do contrato'])||'').trim();
- let sales=number(val(o,['vendas','Vendas','sales','qtd_vendas']));
- if(!sales)sales=status?status.split('#').filter(x=>x.trim()).length:(vgv>0?1:0);
- return{date:date(val(o,['data','date','Data','Data de atendimento'])),promotor:String(val(o,['promotor','Promotor','Promotor de marketing','captador'])||'').trim(),liner:String(val(o,['liner','Liner','consultor'])||'').trim(),closer:String(val(o,['closer','Closer'])||'').trim(),local:String(val(o,['local','Local','Local Captação','ponto'])||'').trim(),vgv,sales,casal:number(val(o,['casais','Casais','atendimentos','Atendimentos']))||1,q:String(val(o,['q','Q','qualificado','Qualificado','Qualificação'])||'').trim(),city:String(val(o,['cidade','Cidade','CIDADE'])||'').trim(),profession:String(val(o,['profissao','Profissão','Profissão 1','ocupacao'])||'').trim(),income:String(val(o,['renda','Renda','RENDA'])||'').trim(),age:String(val(o,['idade','Idade','Idade 1'])||'').trim(),hour:String(val(o,['hora','Hora','Horário','Hora de atendimento'])||'').trim()}
+let deferredPrompt=null;
+function isStandalone(){return window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;}
+function mount(){
+  const header=document.querySelector('.top');
+  if(!header||document.getElementById('installApp'))return;
+  const btn=document.createElement('button');
+  btn.id='installApp';
+  btn.type='button';
+  btn.className='btn primary';
+  btn.textContent=isStandalone()?'App instalado':'Instalar App';
+  btn.style.marginLeft='10px';
+  btn.style.whiteSpace='nowrap';
+  if(isStandalone()){btn.disabled=true;btn.style.opacity='.65';}
+  btn.addEventListener('click',async()=>{
+    if(isStandalone())return;
+    if(deferredPrompt){
+      deferredPrompt.prompt();
+      try{await deferredPrompt.userChoice;}catch(e){}
+      deferredPrompt=null;
+      return;
+    }
+    const ua=navigator.userAgent||'';
+    if(/iphone|ipad|ipod/i.test(ua)){
+      alert('No iPhone/iPad: abra no Safari, toque em Compartilhar e depois em “Adicionar à Tela de Início”.');
+    }else{
+      alert('Se a instalação automática não abrir, use o menu do navegador e escolha “Instalar app” ou “Adicionar à tela inicial”.');
+    }
+  });
+  header.appendChild(btn);
 }
-function unpackLatest(x){
- if(!(x&&x.v===1&&Array.isArray(x.d)&&Array.isArray(x.r)))return [];
- const [P,L,C,O,Q,CI,PR,IN]=x.d,m=x.m||'2026-08';
- return x.r.map(a=>({date:`${m}-${String(a[0]).padStart(2,'0')}`,promotor:P[a[1]]||'',liner:L[a[2]]||'',closer:C[a[3]]||'',local:O[a[4]]||'',vgv:number(a[5]),q:Q[a[6]]||'',sales:number(a[7]),city:CI[a[8]]||'',profession:PR[a[9]]||'',income:IN[a[10]]||'',age:String(a[11]??''),hour:String(a[12]||''),casal:1}));
-}
-function flatten(x){if(Array.isArray(x))return x.flatMap(flatten);if(x&&typeof x==='object'){const v=Object.values(x);if(v.length&&v.every(z=>z&&typeof z==='object'&&!Array.isArray(z)))return v.flatMap(flatten);return[x]}return[]}
-async function load(){
- try{
-   let rows=[];
-   try{
-     const r=await fetch('./data-latest.json?ts='+Date.now(),{cache:'no-store'});
-     if(r.ok){const p=await r.json();rows=unpackLatest(p);if(rows.length)state.range=[date(p.from)||rows[0].date,date(p.to)||rows[rows.length-1].date];}
-   }catch(e){console.warn('Base atual indisponível',e)}
-   if(!rows.length){
-     const r=await fetch('./data.json?ts='+Date.now(),{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);
-     rows=flatten(await r.json()).map(normalize).filter(r=>r.promotor||r.vgv||r.date||r.local);
-   }
-   state.rows=rows;
-   window.__FLUXOHUB_DATA__=rows;
-   if(!state.rows.length)throw Error('Base sem registros');
-   injectFilters();buildFilters();apply();
- }catch(e){console.error(e);qs('.kpi').forEach(x=>x.textContent='0');if($('highlight'))$('highlight').innerHTML='<div class="alert"><b>Erro ao carregar a base.</b><p>Recarregue a página.</p></div>'}
-}
-function opts(id,field){const e=$(id);if(!e)return;const a=[...new Set(state.rows.map(r=>r[field]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));e.innerHTML='<option value="">Todos</option>'+a.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('')}
-function buildFilters(){opts('promotor','promotor');opts('liner','liner');opts('closer','closer');opts('local','local');const d=state.rows.map(r=>r.date).filter(Boolean).sort();if(d.length){if($('start')&&!$('start').value)$('start').value=state.range?.[0]||d[0];if($('end')&&!$('end').value)$('end').value=state.range?.[1]||d[d.length-1]}qs('.section-filter').forEach(syncSection)}
-function filterHTML(){return `<div class="section-filter filters"><div class="field"><label>PERÍODO</label><input data-filter="start" type="date"></div><div class="field"><label>ATÉ</label><input data-filter="end" type="date"></div><div class="field"><label>PROMOTOR</label><select data-filter="promotor"></select></div><div class="field"><label>LINER</label><select data-filter="liner"></select></div><div class="field"><label>CLOSER</label><select data-filter="closer"></select></div><div class="field"><label>LOCAL</label><select data-filter="local"></select></div><button type="button" class="btn section-clear">Limpar filtro da aba</button></div>`}
-function injectFilters(){qs('section[id^="page-"]').forEach(s=>{if(!s.querySelector('.section-filter'))s.insertAdjacentHTML('afterbegin',filterHTML())});qs('.section-filter').forEach(b=>{b.addEventListener('change',e=>{const id=e.target.dataset.filter;if(id&&$(id)){$(id).value=e.target.value;apply()}});b.querySelector('.section-clear')?.addEventListener('click',resetFilters)})}
-function syncSection(b){['start','end','promotor','liner','closer','local'].forEach(id=>{const s=$(id),d=b.querySelector(`[data-filter="${id}"]`);if(!s||!d)return;if(d.tagName==='SELECT')d.innerHTML=s.innerHTML;d.value=s.value||''})}
-function resetFilters(){['start','end','promotor','liner','closer','local'].forEach(id=>{if($(id))$(id).value=''});buildFilters();apply()}
-function apply(){let a=state.rows.slice(),st=$('start')?.value,en=$('end')?.value,p=$('promotor')?.value,l=$('liner')?.value,c=$('closer')?.value,lo=$('local')?.value;if(st)a=a.filter(r=>!r.date||r.date>=st);if(en)a=a.filter(r=>!r.date||r.date<=en);if(p)a=a.filter(r=>r.promotor===p);if(l)a=a.filter(r=>r.liner===l);if(c)a=a.filter(r=>r.closer===c);if(lo)a=a.filter(r=>r.local===lo);state.filtered=a;qs('.section-filter').forEach(syncSection);render()}
-function aggregate(a){const v=a.reduce((s,r)=>s+r.vgv,0),sales=a.reduce((s,r)=>s+(r.sales||0),0),atend=a.reduce((s,r)=>s+(r.casal||1),0);return{v,sales,atend,conv:atend?sales/atend:0,ticket:sales?v/sales:0,per:atend?v/atend:0}}
-function groups(a,f){const m=new Map();a.forEach(r=>{const k=r[f]||'Não informado';if(!m.has(k))m.set(k,[]);m.get(k).push(r)});return[...m].map(([name,rows])=>({name,rows,m:aggregate(rows)}))}
-function table(a){if(!a.length)return'<div class="empty">Nenhum registro encontrado.</div>';return`<div class="tablewrap"><table><thead><tr><th>#</th><th>Promotor</th><th>VGV</th><th>Vendas</th><th>Conversão</th><th>Atendimentos</th></tr></thead><tbody>${a.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.name)}</td><td class="money">${money(x.m.v)}</td><td>${num(x.m.sales)}</td><td>${pct(x.m.conv)}</td><td>${num(x.m.atend)}</td></tr>`).join('')}</tbody></table></div>`}
-function render(){const a=state.filtered,m=aggregate(a);if($('vgv'))$('vgv').textContent=money(m.v);if($('casais'))$('casais').textContent=num(m.atend);if($('vendas'))$('vendas').textContent=num(m.sales);if($('conv'))$('conv').textContent=pct(m.conv);if($('ticket'))$('ticket').textContent=money(m.ticket);if($('vgvCasal'))$('vgvCasal').textContent=money(m.per);if($('vgvSub'))$('vgvSub').textContent=`${num(m.sales)} vendas · ${pct(m.conv)} conversão`;if($('convSub'))$('convSub').textContent=`Q: ${num(a.filter(r=>norm(r.q)==='q'||norm(r.q)==='qualificado').length)} · NQ: ${num(a.filter(r=>norm(r.q)==='nq'||norm(r.q).includes('nao qualificado')).length)}`;if($('vgvProg'))$('vgvProg').style.width=Math.min(100,m.v/15000000*100)+'%';renderRanking();renderTeam();renderFunnel();renderHighlight();renderInsights();renderAlerts();renderOperation();renderProfile();renderData();drawDaily()}
-function renderRanking(){let a=groups(state.filtered,'promotor'),k=state.rank==='vendas'?'sales':state.rank==='conv'?'conv':state.rank==='casais'?'atend':'v';a.sort((x,y)=>y.m[k]-x.m[k]);if($('rankingTable'))$('rankingTable').innerHTML=table(a.slice(0,30));if($('rankingFull'))$('rankingFull').innerHTML=table(a)}
-function renderTeam(){if($('teamTable'))$('teamTable').innerHTML=table(groups(state.filtered,'promotor').sort((a,b)=>b.m.v-a.m.v))}
-function funnel(a){const m=aggregate(a),q=a.filter(r=>norm(r.q)==='q'||norm(r.q)==='qualificado').length,nq=a.filter(r=>norm(r.q)==='nq'||norm(r.q).includes('nao qualificado')).length;return[['ABORDAGENS',m.atend,''],['QUALIFICADOS',q,'q'],['NÃO QUALIFICADOS',nq,'t'],['VENDAS',m.sales,'s']].map(x=>`<div class="funnelrow"><div class="funnelbar ${x[2]}" style="width:${Math.max(80,Math.min(100,x[1]/Math.max(1,m.atend)*100))}%">${x[0]}</div><div class="ftxt">${num(x[1])}</div></div>`).join('')}
-function renderFunnel(){const h=funnel(state.filtered);if($('funnel'))$('funnel').innerHTML=h;if($('funnel2'))$('funnel2').innerHTML=h;if($('motives'))$('motives').innerHTML=groups(state.filtered,'q').sort((a,b)=>b.rows.length-a.rows.length).map(g=>`<div class="stat"><span>${esc(g.name)}</span><b>${num(g.rows.length)}</b></div>`).join('')}
-function renderHighlight(){const e=$('highlight');if(!e)return;const g=groups(state.filtered,'promotor').sort((a,b)=>b.m.v-a.m.v)[0];e.innerHTML=g?`<div class="person"><div class="avatar">${esc(g.name.slice(0,1).toUpperCase())}</div><div><b>${esc(g.name)}</b><div class="badge">TOP VGV</div></div></div><div class="stats"><div class="stat">VGV <b>${money(g.m.v)}</b></div><div class="stat">Vendas <b>${num(g.m.sales)}</b></div><div class="stat">Conversão <b>${pct(g.m.conv)}</b></div><div class="stat">Atendimentos <b>${num(g.m.atend)}</b></div></div>`:'<div class="empty">Sem dados.</div>'}
-function renderInsights(){const e=$('insights');if(!e)return;const m=aggregate(state.filtered);e.innerHTML=`<div class="insight"><b>Resumo</b><p>${num(m.sales)} vendas em ${num(m.atend)} atendimentos, conversão de ${pct(m.conv)} e VGV de ${money(m.v)}.</p></div><div class="info">Registros filtrados: <b>${num(state.filtered.length)}</b></div>`}
-function renderAlerts(){const e=$('alerts');if(!e)return;const m=aggregate(state.filtered);e.innerHTML=m.conv<.2?'<div class="alert"><b>⚠️ Conversão abaixo de 20%.</b><p>Revise abordagem e qualificação.</p></div>':'<div class="info">✅ Conversão acima de 20%.</div>'}
-function draw(id,pts,label){const c=$(id);if(!c)return;const ratio=devicePixelRatio||1,w=c.clientWidth||600,h=c.clientHeight||275;c.width=w*ratio;c.height=h*ratio;const x=c.getContext('2d');x.setTransform(ratio,0,0,ratio,0,0);x.clearRect(0,0,w,h);if(!pts.length){x.fillStyle='#8d99aa';x.font='14px sans-serif';x.fillText('Sem dados para o período',20,35);return}const max=Math.max(1,...pts.map(p=>p.v)),pad=35;x.strokeStyle='#1683ff';x.lineWidth=2;x.beginPath();pts.forEach((p,i)=>{const xx=pad+(w-pad*2)*i/Math.max(1,pts.length-1),yy=h-pad-(h-pad*2)*p.v/max;i?x.lineTo(xx,yy):x.moveTo(xx,yy)});x.stroke();x.fillStyle='#8d99aa';x.font='10px sans-serif';x.fillText(label,pad,16)}
-function drawDaily(){const m={};state.filtered.forEach(r=>{if(r.date)m[r.date]=(m[r.date]||0)+r.vgv});draw('daily',Object.keys(m).sort().map(d=>({v:m[d]})),'VGV por dia')}
-function renderOperation(){const hm={};state.filtered.forEach(r=>{const z=String(r.hour||'').match(/\d{1,2}/);if(z){const h=String(Math.min(23,+z[0])).padStart(2,'0');hm[h]=(hm[h]||0)+r.vgv}});draw('hours',Object.keys(hm).sort((a,b)=>+a-+b).map(h=>({v:hm[h]})),'VGV por hora');if($('locations'))$('locations').innerHTML=groups(state.filtered,'local').sort((a,b)=>b.m.v-a.m.v).slice(0,20).map(g=>`<div class="stat"><span>${esc(g.name)}</span><b>${money(g.m.v)}</b></div>`).join('')||'<div class="empty">Sem dados.</div>'}
-function listGroups(a){return a.length?a.map(g=>`<div class="stat"><span>${esc(g.name)}</span><b>${num(g.rows.length)}</b></div>`).join(''):'<div class="empty">Sem dados.</div>'}
-function renderProfile(){const e=$('profileTable');if(!e)return;const city=groups(state.filtered,'city').sort((a,b)=>b.rows.length-a.rows.length).slice(0,20),prof=groups(state.filtered,'profession').sort((a,b)=>b.rows.length-a.rows.length).slice(0,20),inc=groups(state.filtered,'income').sort((a,b)=>b.rows.length-a.rows.length).slice(0,20);e.innerHTML=`<div class="grid"><div class="card s4"><div class="title">Cidades</div>${listGroups(city)}</div><div class="card s4"><div class="title">Profissões</div>${listGroups(prof)}</div><div class="card s4"><div class="title">Renda</div>${listGroups(inc)}</div></div>`}
-function renderData(){if($('dataTable'))$('dataTable').innerHTML=`<div class="info"><b>${num(state.filtered.length)}</b> registros filtrados de <b>${num(state.rows.length)}</b> carregados.</div>`}
-function nav(page){state.page=page;qs('[id^="page-"]').forEach(x=>x.hidden=x.id!==`page-${page}`);qs('.nav button,.mobilebar button').forEach(b=>b.classList.toggle('active',b.dataset.page===page));const t={visao:'Visão 360°',equipe:'Equipe',funil:'Funil de Vendas',ranking:'Ranking',operacao:'Operação',perfil:'Perfil do Cliente',alertas:'Alertas',dados:'Dados'};if($('pageTitle'))$('pageTitle').textContent=t[page]||'FluxoHub'}
-function bind(){document.addEventListener('click',e=>{const n=e.target.closest('[data-page]');if(n){e.preventDefault();nav(n.dataset.page);return}const r=e.target.closest('[data-rank]');if(r){e.preventDefault();state.rank=r.dataset.rank;qs('[data-rank]').forEach(x=>x.classList.toggle('active',x===r));renderRanking()}});['start','end','promotor','liner','closer','local'].forEach(id=>$(id)?.addEventListener('change',apply));$('reset')?.addEventListener('click',resetFilters);$('export')?.addEventListener('click',()=>{const csv=['PROMOTOR,VGV,VENDAS,CONVERSAO,ATENDIMENTOS',...groups(state.filtered,'promotor').map(g=>[JSON.stringify(g.name),g.m.v,g.m.sales,(g.m.conv*100).toFixed(2),g.m.atend].join(','))].join('\n');const u=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=u;a.download='fluxohub-export.csv';a.click();URL.revokeObjectURL(u)})}
-function init(){bind();nav('visao');load()}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;mount();});
+window.addEventListener('appinstalled',()=>{deferredPrompt=null;const b=document.getElementById('installApp');if(b){b.textContent='App instalado';b.disabled=true;b.style.opacity='.65';}});
+if('serviceWorker'in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount);else mount();
 })();
