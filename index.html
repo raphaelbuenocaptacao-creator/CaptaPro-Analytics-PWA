@@ -42,4 +42,5 @@ async function load(){try{const r=await fetch('./data-latest.json?v=20260823-rul
 qa('[data-page]').forEach(b=>b.addEventListener('click',()=>nav(b.dataset.page)));qa('[data-rank]').forEach(b=>b.addEventListener('click',()=>{state.rank=b.dataset.rank;qa('[data-rank]').forEach(x=>x.classList.toggle('active',x===b));renderRanks()}));['start','end','promotor','liner','closer','local'].forEach(id=>$(id).addEventListener('change',apply));$('reset').addEventListener('click',reset);$('export').addEventListener('click',exportCsv);if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});load();
 })();
 </script><script src="./app.js?v=1" defer></script>
+<script src="fluxohub-import-pwa.js"></script>
 </body></html>
