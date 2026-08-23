@@ -1,0 +1,51 @@
+name: Build annual data
+
+on:
+  push:
+    paths:
+      - '.github/workflows/build-annual-data.yml'
+      - 'data-2026-full.json'
+      - 'data-2026-full.part*.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Rebuild raw annual JSON
+        shell: python
+        run: |
+          import base64, gzip, json, pathlib
+          root = pathlib.Path('.')
+          manifest = json.loads((root / 'data-2026-full.json').read_text(encoding='utf-8'))
+          chunks = manifest.get('chunks', [])
+          if not chunks:
+              raise SystemExit('Manifesto anual sem chunks')
+          b64 = ''.join((root / name).read_text(encoding='utf-8').strip() for name in chunks)
+          raw = gzip.decompress(base64.b64decode(b64))
+          data = json.loads(raw.decode('utf-8'))
+          rows = data.get('r', [])
+          if len(rows) != int(manifest.get('records', len(rows))):
+              raise SystemExit(f'Quantidade divergente: {len(rows)}')
+          (root / 'data-2026-full.raw.json').write_text(json.dumps(data, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
+          print('Registros:', len(rows), 'Período:', data.get('from'), data.get('to'))
+
+      - name: Commit raw data
+        run: |
+          git config user.name "captaup-bot"
+          git config user.email "captaup-bot@users.noreply.github.com"
+          git add data-2026-full.raw.json
+          if git diff --cached --quiet; then
+            echo "Sem alterações"
+          else
+            git commit -m "Gera base anual raw para PWA"
+            git push
+          fi
