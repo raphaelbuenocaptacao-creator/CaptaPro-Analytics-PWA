@@ -1,11 +1,21 @@
 {
   "name": "FluxoHub Analytics 360°",
   "short_name": "FluxoHub",
+  "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#080a0f",
-  "theme_color": "#0b0d12",
+  "theme_color": "#070a0f",
   "lang": "pt-BR",
-  "description": "Dashboard comercial 360° do FluxoHub"
+  "description": "Dashboard comercial 360° do FluxoHub",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
 }
