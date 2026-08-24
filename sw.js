@@ -1,5 +1,5 @@
-const CACHE = "captaup-v38-manager";
-const APP_SHELL = ["./index.html","./manifest.webmanifest","./icon.svg","./captaup.css","./captaup-auth.js","./captaup-admin.js","./captaup-auth-bridge.js","./captaup-data.js","./captaup-main.js","./ranking-controls.js","./ranking-page.js","./manager-insights.js","./active-professionals.js","./captaup-pwa.js","./weekly-captain.js","./engagement.js"];
+const CACHE = "captaup-v40-premium";
+const APP_SHELL = ["./index.html","./manifest.webmanifest","./icon.svg","./captaup.css","./captaup-premium.css","./captaup-auth.js","./captaup-admin.js","./captaup-auth-bridge.js","./captaup-data.js","./captaup-main.js","./ranking-controls.js","./ranking-page.js","./manager-insights.js","./active-professionals.js","./captaup-ui.js","./captaup-pwa.js","./weekly-captain.js","./engagement.js"];
 self.addEventListener("install",event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(APP_SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener("activate",event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener("fetch",event=>{
