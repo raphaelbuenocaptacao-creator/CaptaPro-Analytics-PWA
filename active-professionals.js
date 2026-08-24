@@ -53,4 +53,6 @@ function apply(){
 let queued=false;const schedule=()=>{if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;apply()})};
 new MutationObserver(schedule).observe(document.documentElement,{subtree:true,childList:true});
 window.addEventListener('DOMContentLoaded',schedule);setTimeout(schedule,300);setTimeout(schedule,1200);
+function loadPromotorFocus(){if(document.querySelector('script[data-promotor-focus]'))return;const s=document.createElement('script');s.src='./promotor-focus.js?v=20260824-focus45';s.dataset.promotorFocus='1';s.async=false;document.body.appendChild(s)}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadPromotorFocus);else loadPromotorFocus();
 })();
