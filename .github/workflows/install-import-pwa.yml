@@ -1,35 +1,10 @@
-name: Install safe Excel import and PWA button
+name: Legacy import/PWA installer (disabled)
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 jobs:
-  patch:
-    if: ${{ !contains(github.event.head_commit.message, '[import-pwa-installed]') }}
+  disabled:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Patch index
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          p=Path('index.html')
-          s=p.read_text(encoding='utf-8')
-          if 'id="installPWA"' not in s:
-              s=s.replace('<button class="btn primary" id="importBtn">Importar CSV</button>', '<button class="btn" id="installPWA">Instalar PWA</button><button class="btn primary" id="importBtn">Importar Excel/CSV</button>')
-          if 'fluxohub-import-pwa.js' not in s:
-              marker='<script src="app.js"></script>'
-              if marker in s:
-                  s=s.replace(marker, '<script src="fluxohub-import-pwa.js"></script>\n'+marker)
-              else:
-                  s=s.replace('</body>', '<script src="fluxohub-import-pwa.js"></script>\n</body>')
-          p.write_text(s,encoding='utf-8')
-          PY
-      - name: Commit patch
-        run: |
-          git config user.name 'raphaelbuenocaptacao-creator'
-          git config user.email 'raphaelbueno.captacao@gmail.com'
-          git add index.html
-          git diff --cached --quiet || git commit -m 'Install safe Excel import and PWA button [import-pwa-installed]'
-          git push
+      - run: echo "Legacy workflow disabled. Current CAPTAUP index controls PWA and import behavior."
