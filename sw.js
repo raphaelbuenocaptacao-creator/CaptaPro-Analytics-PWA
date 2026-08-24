@@ -1,5 +1,5 @@
-const CACHE = "captaup-v20-data-2308";
-const APP_SHELL = ["./index.html", "./manifest.webmanifest", "./icon.svg", "./captaup.css", "./captaup-data.js", "./daily-extra.js", "./captaup-main.js", "./captaup-pwa.js", "./weekly-captain.js", "./engagement.js", "./data-2026-full.json", "./data-extra-2026-08-23.json", "./data-2026-full.part1.txt", "./data-2026-full.part2.txt", "./data-2026-full.part3.txt", "./data-2026-full.part4.txt", "./vendor/pako.part1.txt", "./vendor/pako.part2.txt", "./vendor/pako.part3.txt"];
+const CACHE = "captaup-v21-direct-2308";
+const APP_SHELL = ["./index.html", "./manifest.webmanifest", "./icon.svg", "./captaup.css", "./captaup-data.js", "./captaup-main.js", "./captaup-pwa.js", "./weekly-captain.js", "./engagement.js", "./data-2026-full.json", "./data-extra-2026-08-23.json", "./data-2026-full.part1.txt", "./data-2026-full.part2.txt", "./data-2026-full.part3.txt", "./data-2026-full.part4.txt", "./vendor/pako.part1.txt", "./vendor/pako.part2.txt", "./vendor/pako.part3.txt"];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())));
 self.addEventListener("fetch", event => {
