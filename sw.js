@@ -1,4 +1,4 @@
-const CACHE = "captaup-v43-role-experience";
+const CACHE = "captaup-v44-ranking-visao";
 const APP_SHELL = ["./index.html","./manifest.webmanifest","./icon.svg","./captaup.css","./captaup-premium.css","./captaup-auth.js","./captaup-admin.js","./captaup-auth-bridge.js","./captaup-data.js","./captaup-main.js","./ranking-controls.js","./ranking-page.js","./manager-insights.js","./active-professionals.js","./challenge-promoters-fix.js","./captaup-ui.js","./default-period.js","./role-experience.js","./captaup-pwa.js","./weekly-captain.js","./engagement.js"];
 self.addEventListener("install",event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(APP_SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener("activate",event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
