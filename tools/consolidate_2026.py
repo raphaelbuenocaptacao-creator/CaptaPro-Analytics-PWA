@@ -1,35 +1,29 @@
-import json
+import base64,gzip,json
 from pathlib import Path
 
-src=Path('data.json')
 out=Path('data-diagnostic.json')
-info={'exists':src.exists(),'size':src.stat().st_size if src.exists() else 0}
+info={}
 try:
-    data=json.loads(src.read_text(encoding='utf-8'))
-    info['type']=type(data).__name__
-    if isinstance(data,dict):
-        info['keys']=list(data.keys())[:50]
-        for k,v in data.items():
-            if isinstance(v,list):
-                info['list_key']=k
-                info['list_len']=len(v)
-                if v:
-                    info['first_type']=type(v[0]).__name__
-                    if isinstance(v[0],dict):
-                        info['first_keys']=list(v[0].keys())[:100]
-                        info['first_sample']={kk:v[0].get(kk) for kk in list(v[0].keys())[:25]}
-                    else:
-                        info['first_sample']=v[0]
-                break
-    elif isinstance(data,list):
-        info['list_len']=len(data)
-        if data:
-            info['first_type']=type(data[0]).__name__
-            if isinstance(data[0],dict):
-                info['first_keys']=list(data[0].keys())[:100]
-                info['first_sample']={kk:data[0].get(kk) for kk in list(data[0].keys())[:25]}
-            else:
-                info['first_sample']=data[0]
+    manifest=json.loads(Path('data-2026-full.json').read_text(encoding='utf-8'))
+    info['manifest']=manifest
+    chunks=manifest.get('chunks',[])
+    info['chunk_sizes']={name:Path(name).stat().st_size for name in chunks}
+    texts=[Path(name).read_text(encoding='utf-8').strip() for name in chunks]
+    info['chunk_text_lengths']={name:len(text) for name,text in zip(chunks,texts)}
+    b64=''.join(texts)
+    info['b64_len']=len(b64)
+    decoded=base64.b64decode(b64,validate=True)
+    info['decoded_len']=len(decoded)
+    raw=gzip.decompress(decoded)
+    info['raw_len']=len(raw)
+    data=json.loads(raw.decode('utf-8'))
+    info['payload_type']=type(data).__name__
+    info['payload_keys']=list(data.keys()) if isinstance(data,dict) else []
+    info['rows']=len(data.get('r',[])) if isinstance(data,dict) else None
+    info['from']=data.get('from') if isinstance(data,dict) else None
+    info['to']=data.get('to') if isinstance(data,dict) else None
+    if isinstance(data,dict) and isinstance(data.get('r'),list):
+        info['vgv']=round(sum(float(r[5] or 0) for r in data['r']),2)
 except Exception as e:
     info['error']=repr(e)
 out.write_text(json.dumps(info,ensure_ascii=False,indent=2,default=str),encoding='utf-8')
