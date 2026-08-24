@@ -1,0 +1,25 @@
+name: Consolidar base CAPTAUP 2026
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/consolidate-2026.yml'
+      - 'tools/consolidate_2026.py'
+      - 'data-extra-2026-08-23.json'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  consolidate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Consolidar base anual
+        run: python tools/consolidate_2026.py
+      - name: Publicar base unica
+        run: |
+          git config user.name 'captaup-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add data-2026.json
+          git diff --cached --quiet || git commit -m 'Consolida base oficial 2026 ate 23-08 [consolidated]'
+          git push
