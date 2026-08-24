@@ -1,12 +1,13 @@
-# CAPTAUP annual raw builder - trigger 2026-08-23
-name: Build annual data
+name: Build CAPTAUP single base
 
 on:
   push:
+    branches: [main]
     paths:
       - '.github/workflows/build-annual-data.yml'
       - 'data-2026-full.json'
       - 'data-2026-full.part*.txt'
+      - 'data-extra-2026-08-23.json'
   workflow_dispatch:
 
 permissions:
@@ -16,37 +17,53 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Rebuild raw annual JSON
+      - name: Rebuild and consolidate official base
         shell: python
         run: |
           import base64, gzip, json, pathlib
           root = pathlib.Path('.')
-          manifest = json.loads((root / 'data-2026-full.json').read_text(encoding='utf-8'))
-          chunks = manifest.get('chunks', [])
-          if not chunks:
-              raise SystemExit('Manifesto anual sem chunks')
-          b64 = ''.join((root / name).read_text(encoding='utf-8').strip() for name in chunks)
-          raw = gzip.decompress(base64.b64decode(b64))
-          data = json.loads(raw.decode('utf-8'))
-          rows = data.get('r', [])
-          if len(rows) != int(manifest.get('records', len(rows))):
-              raise SystemExit(f'Quantidade divergente: {len(rows)}')
-          (root / 'data-2026-full.raw.json').write_text(json.dumps(data, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
-          print('Registros:', len(rows), 'Período:', data.get('from'), data.get('to'))
+          manifest = json.loads((root/'data-2026-full.json').read_text(encoding='utf-8'))
+          b64 = ''.join((root/n).read_text(encoding='utf-8').strip() for n in manifest['chunks'])
+          base = json.loads(gzip.decompress(base64.b64decode(b64)).decode('utf-8'))
+          extra = json.loads((root/'data-extra-2026-08-23.json').read_text(encoding='utf-8'))
+          if len(base.get('r',[])) != 3373:
+              raise SystemExit(f'Base anual inesperada: {len(base.get("r",[]))}')
+          row_pos=[1,2,3,4,6,12,13,14]
+          maps=[]
+          for di in range(8):
+              target=base['d'][di]
+              index={str(v):i for i,v in enumerate(target)}
+              mp=[]
+              for v in extra['d'][di]:
+                  key=str(v)
+                  if key not in index:
+                      index[key]=len(target); target.append(v)
+                  mp.append(index[key])
+              maps.append(mp)
+          if not any(r and r[0]=='2026-08-23' for r in base['r']):
+              for row in extra['r']:
+                  nr=list(row)
+                  for di,pos in enumerate(row_pos): nr[pos]=maps[di][row[pos]]
+                  base['r'].append(nr)
+          base['v']=2
+          base['from']='2026-01-01'
+          base['to']='2026-08-23'
+          base['schema']='compact-v2'
+          if len(base['r']) != 3394:
+              raise SystemExit(f'Total inesperado: {len(base["r"])}')
+          if sum(1 for r in base['r'] if r and r[0]=='2026-08-23') != 21:
+              raise SystemExit('Dia 23/08 divergente')
+          (root/'data-2026.json').write_text(json.dumps(base,ensure_ascii=False,separators=(',',':')),encoding='utf-8')
+          print('OK:',len(base['r']),base['from'],base['to'])
 
-      - name: Commit raw data
+      - name: Publish official base
         run: |
-          git config user.name "captaup-bot"
-          git config user.email "captaup-bot@users.noreply.github.com"
-          git add data-2026-full.raw.json
-          if git diff --cached --quiet; then
-            echo "Sem alterações"
-          else
-            git commit -m "Gera base anual raw para PWA"
-            git push
-          fi
+          git config user.name 'captaup-bot'
+          git config user.email 'captaup-bot@users.noreply.github.com'
+          git add data-2026.json
+          git diff --cached --quiet || git commit -m 'Restaura base oficial CAPTAUP 3394 registros'
+          git push
