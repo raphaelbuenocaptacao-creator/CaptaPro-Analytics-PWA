@@ -4,11 +4,12 @@ const USERS_KEY='captaup_auth_users_v1';
 const SESSION_KEY='captaup_auth_session_v1';
 const PROFILE_KEY='captaup_user_profile_v1';
 const DEMO_USERS=[
-  {email:'raphaelbueno.captacao@gmail.com',name:'RAPHAEL BUENO DA SILVA',accessRole:'Administrador',performanceRole:'promotor',active:true}
+  {email:'raphaelbueno.captacao@gmail.com',name:'RAPHAEL BUENO DA SILVA',accessRole:'Administrador',performanceRole:'promotor',active:true},
+  {email:'raphaelbuenosuporte@gmail.com',name:'RAPHAEL BUENO DA SILVA',accessRole:'Administrador',performanceRole:'promotor',active:true}
 ];
 const $=id=>document.getElementById(id);
 const norm=s=>String(s||'').trim().toLowerCase();
-const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const esc=s=>String(s??'').replace(/[&<>\"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[m]));
 function read(k,fallback){try{return JSON.parse(localStorage.getItem(k))||fallback}catch{return fallback}}
 function write(k,v){localStorage.setItem(k,JSON.stringify(v))}
 function users(){
