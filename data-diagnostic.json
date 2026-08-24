@@ -1,29 +1,27 @@
 {
-  "manifest": {
-    "v": 3,
-    "from": "2026-01-01",
-    "to": "2026-08-22",
-    "encoding": "gzip-base64-chunks",
-    "chunks": [
-      "data-2026-full.part1.txt",
-      "data-2026-full.part2.txt",
-      "data-2026-full.part3.txt",
-      "data-2026-full.part4.txt"
-    ],
-    "records": 3373
+  "lengths": [
+    18489,
+    20000,
+    20000,
+    19564
+  ],
+  "total": 78053,
+  "positions": {
+    "p1_start": 0,
+    "p1_end": 18409,
+    "p2_start": -1,
+    "p2_end": -1,
+    "p3_start": -1,
+    "p3_end": -1,
+    "p4_start": -1,
+    "p4_end": -1
   },
-  "chunk_sizes": {
-    "data-2026-full.part1.txt": 18489,
-    "data-2026-full.part2.txt": 20000,
-    "data-2026-full.part3.txt": 20000,
-    "data-2026-full.part4.txt": 19564
-  },
-  "chunk_text_lengths": {
-    "data-2026-full.part1.txt": 18489,
-    "data-2026-full.part2.txt": 20000,
-    "data-2026-full.part3.txt": 20000,
-    "data-2026-full.part4.txt": 19564
-  },
-  "b64_len": 78053,
-  "error": "Error('Invalid base64-encoded string: number of data characters (78053) cannot be 1 more than a multiple of 4')"
+  "part1_start": "H4sIAHOpi2oC/5y9TXMcOZYg+FdosjWbHjNWjgNwwN3zFqIoJVX8UJGUerra+hAiQ8rIIRmsCIYmO/fUp7E57B/Y0+b0oa3arE61",
+  "part1_end": "Vn8ge8bhJMJuV9ZHJwuX69mJeHdhLhDU367C3lrcwXfXCCWecvw4s08t8TeW0lJay4rWq5wmwkBDxiC5loZXYF+Wy/ohcJSZbF8g",
+  "part2_start": "yDJN3aQAsc1VwcwlzEHM8agUC2pT6zPqtXl6BODPI4kWYoFTtOwEIPOGJFuLKhLmRJtwLOpx8FnM+1r6CMcRuzQzRlVJ5TxWyqs+",
+  "part2_end": "6hr/WpSdsl+Tu01jmYI5KwKQ7O/h4Rf0qJKch3ZnuSlRvH+OraxD3ji1owDaT8nuCLh0O6FTfXhB2L23TRB46Sq66s82/BRzG0Ij",
+  "part3_start": "pThpjqHM/YXvFi9W80QzVjSidfGEXwR6hzCRQqdwBo5wMmx+ao7Ghteo3IJk+Li5H3P/PRiuQEFsm+uKgtj8/dl3Y/dhSdK2JqD5",
+  "part3_end": "zo4DfLgUxn6fpuTbsBSRgRU+nkiwAf1RHrjN6ifT3hs8hHIl+HtsaUw4vQ5NFjl74vZ7TaH923osbZAS2qgcOM0mH1NS1regn6AZ",
+  "part4_start": "EpTNqXG5jSTFteXEMZo0XWC0GON9lDLbRPXbS+HkmDHevw73qTdetFyGBsaf6CP7x5C8hMKPttAiIAjFzzMI5xNwto3R4RMN+ofG",
+  "part4_end": "gJvE++katny/8uvj5rneT2jtTTvSs5kD5Gunvuq5MkRa/277Mw7F8sEqI7IhhLSrwSJER3uioAtysTfSDW3P/Pn7DyjI7/n2+AMA"
 }
