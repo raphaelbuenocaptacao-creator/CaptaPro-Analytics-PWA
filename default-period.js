@@ -13,5 +13,6 @@ async function applyAnnualRange(){
     window.__captaupDefaultRange=[st,en];
   }catch(err){console.warn('CAPTAUP default annual range',err)}
 }
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(applyAnnualRange,250));else setTimeout(applyAnnualRange,250);
+function loadRoleExperience(){if(document.querySelector('script[data-captaup-role]'))return;const s=document.createElement('script');s.src='./role-experience.js?v=20260824-role43';s.dataset.captaupRole='1';document.body.appendChild(s)}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{setTimeout(applyAnnualRange,250);setTimeout(loadRoleExperience,450)});else{setTimeout(applyAnnualRange,250);setTimeout(loadRoleExperience,450)}
 })();
