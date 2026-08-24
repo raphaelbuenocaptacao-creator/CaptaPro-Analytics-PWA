@@ -1,18 +1,200 @@
 {
-  "data_json_rows": 3214,
-  "months": {
-    "2026-01": 402,
-    "2026-02": 275,
-    "2026-03": 349,
-    "2026-04": 411,
-    "2026-05": 438,
-    "2026-06": 488,
-    "2026-07": 734,
-    "2026-08": 117
-  },
-  "min_date": "2026-01-01",
-  "max_date": "2026-08-09",
-  "august_latest_rows": 276,
-  "latest_from": "2026-08-01",
-  "latest_to": "2026-08-22"
+  "rows": 3097,
+  "nonzero_vgv_rows": 458,
+  "status_top": [
+    [
+      "",
+      2639
+    ],
+    [
+      "ATIVO",
+      175
+    ],
+    [
+      "CANCELADO",
+      129
+    ],
+    [
+      "ATIVO # ATIVO",
+      70
+    ],
+    [
+      "CANCELADO # CANCELADO",
+      36
+    ],
+    [
+      "ATIVO # ATIVO # ATIVO",
+      21
+    ],
+    [
+      "ATIVO # ATIVO # ATIVO # ATIVO",
+      7
+    ],
+    [
+      "CANCELADO # CANCELADO # CANCELADO",
+      3
+    ],
+    [
+      "ATIVO # ATIVO # ATIVO # ATIVO # ATIVO # ATIVO",
+      3
+    ],
+    [
+      "CANCELADO # CANCELADO # CANCELADO # CANCELADO",
+      3
+    ],
+    [
+      "CANCELADO # CANCELADO # CANCELADO # CANCELADO # CANCELADO # CANCELADO",
+      3
+    ],
+    [
+      "CANCELADO # ATIVO",
+      2
+    ],
+    [
+      "ATIVO # ATIVO # ATIVO # ATIVO # ATIVO",
+      1
+    ],
+    [
+      "ATIVO # CANCELADO",
+      1
+    ],
+    [
+      "ATIVO # CANCELADO # ATIVO",
+      1
+    ],
+    [
+      "CANCELADO # ATIVO # CANCELADO # CANCELADO",
+      1
+    ],
+    [
+      "ATIVO # ATIVO # ATIVO # ATIVO # ATIVO # ATIVO # ATIVO # ATIVO # ATIVO # ATIVO # ATIVO # ATIVO",
+      1
+    ],
+    [
+      "CANCELADOREV",
+      1
+    ]
+  ],
+  "examples": [
+    {
+      "status": "ATIVO",
+      "v": 87000.0,
+      "date": "2026-05-21",
+      "promotor": "SUENE CINTIA DA SILVA"
+    },
+    {
+      "status": "ATIVO",
+      "v": 80000.0,
+      "date": "2026-01-09",
+      "promotor": "SUENE CINTIA DA SILVA"
+    },
+    {
+      "status": "ATIVO",
+      "v": 80000.0,
+      "date": "2026-01-25",
+      "promotor": "FELIPE DA SILVA RIBEIRO"
+    },
+    {
+      "status": "ATIVO",
+      "v": 77000.0,
+      "date": "2026-01-27",
+      "promotor": "LARISSA RIBEIRO"
+    },
+    {
+      "status": "CANCELADO",
+      "v": 80000.0,
+      "date": "2026-01-28",
+      "promotor": "PEDRO HENRIQUE GOMES SANTOS"
+    },
+    {
+      "status": "ATIVO",
+      "v": 80000.0,
+      "date": "2026-02-22",
+      "promotor": "RICARDO MALTCHIK"
+    },
+    {
+      "status": "CANCELADO # CANCELADO # CANCELADO",
+      "v": 255000.0,
+      "date": "2026-03-01",
+      "promotor": "ADRIANO MOREIRA "
+    },
+    {
+      "status": "CANCELADO",
+      "v": 80000.0,
+      "date": "2026-03-14",
+      "promotor": "LARISSA VITORIA"
+    },
+    {
+      "status": "ATIVO",
+      "v": 80000.0,
+      "date": "2026-03-13",
+      "promotor": "RAPHAEL BUENO DA SILVA "
+    },
+    {
+      "status": "CANCELADO",
+      "v": 80000.0,
+      "date": "2026-03-23",
+      "promotor": "PEDRO HENRIQUE GOMES SANTOS"
+    },
+    {
+      "status": "CANCELADO",
+      "v": 80080.0,
+      "date": "2026-03-26",
+      "promotor": "RAPHAEL BUENO DA SILVA "
+    },
+    {
+      "status": "CANCELADO",
+      "v": 80000.0,
+      "date": "2026-03-31",
+      "promotor": "NICK VITORIA"
+    },
+    {
+      "status": "CANCELADO",
+      "v": 80000.0,
+      "date": "2026-04-02",
+      "promotor": "PEDRO HENRIQUE GOMES SANTOS"
+    },
+    {
+      "status": "CANCELADO",
+      "v": 88000.0,
+      "date": "2026-05-26",
+      "promotor": "ALEXANDRE PASQUALE JUNIOR"
+    },
+    {
+      "status": "CANCELADO",
+      "v": 87000.0,
+      "date": "2026-05-11",
+      "promotor": "ANA CAROLINE"
+    },
+    {
+      "status": "ATIVO",
+      "v": 87000.0,
+      "date": "2026-05-10",
+      "promotor": "ANA CAROLINE"
+    },
+    {
+      "status": "CANCELADO",
+      "v": 86000.0,
+      "date": "2026-05-14",
+      "promotor": "DANIELA MOURA"
+    },
+    {
+      "status": "ATIVO # ATIVO",
+      "v": 180000.0,
+      "date": "2026-06-03",
+      "promotor": "ADRIANO MOREIRA "
+    },
+    {
+      "status": "CANCELADO",
+      "v": 91830.0,
+      "date": "2026-06-04",
+      "promotor": "FELIPE DA SILVA RIBEIRO"
+    },
+    {
+      "status": "ATIVO",
+      "v": 88000.0,
+      "date": "2026-06-08",
+      "promotor": "MATHEUS DOMINGOS SANTOS "
+    }
+  ]
 }
