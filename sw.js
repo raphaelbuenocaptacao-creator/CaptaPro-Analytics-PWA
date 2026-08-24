@@ -1,5 +1,5 @@
-const CACHE = "captaup-v24-directjson";
-const APP_SHELL = ["./index.html", "./manifest.webmanifest", "./icon.svg", "./captaup.css", "./captaup-data.js", "./captaup-main.js", "./captaup-pwa.js", "./weekly-captain.js", "./engagement.js", "./data-2026.json", "./data-extra-2026-08-23.json"];
+const CACHE = "captaup-v25-id";
+const APP_SHELL = ["./index.html", "./manifest.webmanifest", "./icon.svg", "./captaup.css", "./captaup-auth.js", "./captaup-auth-bridge.js", "./captaup-data.js", "./captaup-main.js", "./captaup-pwa.js", "./weekly-captain.js", "./engagement.js", "./data-2026.json", "./data-extra-2026-08-23.json"];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())));
 self.addEventListener("fetch", event => {
