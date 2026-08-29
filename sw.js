@@ -1,37 +1,46 @@
-const CACHE = "captaup-v48-safe-pwa";
-const APP_SHELL = ["./index.html","./manifest.webmanifest","./icon-192.svg","./icon-512.svg","./captaup.css","./captaup-auth.js","./captaup-admin.js","./captaup-auth-bridge.js","./captaup-data.js","./captaup-main.js","./ranking-controls.js","./ranking-page.js","./manager-insights.js","./active-professionals.js","./default-period.js","./captaup-pwa.js","./weekly-captain.js","./engagement.js"];
+const CACHE = "captaup-v49-safe-shell";
+const APP_SHELL = new Set(["./","./index.html","./manifest.webmanifest","./icon-192.svg","./icon-512.svg","./icon-512-maskable.svg","./captaup.css","./captaup-auth.js","./captaup-admin.js","./captaup-auth-bridge.js","./captaup-data.js","./captaup-main.js","./ranking-controls.js","./ranking-page.js","./manager-insights.js","./active-professionals.js","./default-period.js","./captaup-pwa.js","./weekly-captain.js","./engagement.js"]);
+const PRIVATE_PATH_RE = /\/(api|auth|login|logout|admin|session|sessions|token|tokens|password|account|profile|me)(\/|$)/i;
 
-self.addEventListener("install",event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(APP_SHELL)).then(()=>self.skipWaiting())));
-self.addEventListener("activate",event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
-
-function shouldBypass(request,url){
-  if(request.method!=="GET") return true;
-  if(request.headers.has("authorization")) return true;
-  if(url.origin!==self.location.origin) return true;
-  const path=url.pathname.toLowerCase();
-  if(path.includes("/api/")||path.includes("/auth")||path.includes("/admin")||path.includes("login")||path.includes("session")||path.includes("token")) return true;
-  return false;
+function isSafeRequest(request){
+  if(request.method !== "GET") return false;
+  if(request.headers.has("authorization") || request.headers.has("cookie")) return false;
+  const url = new URL(request.url);
+  return url.origin === self.location.origin && !PRIVATE_PATH_RE.test(url.pathname);
 }
 
-self.addEventListener("fetch",event=>{
-  const request=event.request;
-  const url=new URL(request.url);
-  if(shouldBypass(request,url)) return;
+function relativeKey(url){
+  const scopePath = new URL(self.registration.scope).pathname;
+  let path = url.pathname.startsWith(scopePath) ? url.pathname.slice(scopePath.length) : url.pathname;
+  path = path.replace(/^\/+/, "");
+  return path ? `./${path}` : "./";
+}
 
-  const networkFirst=()=>fetch(request,{cache:"no-store"}).then(response=>{
-    if(response.ok && response.type==="basic") caches.open(CACHE).then(cache=>cache.put(request,response.clone()));
-    return response;
-  }).catch(()=>caches.match(request).then(cached=>cached||(request.mode==="navigate"?caches.match("./index.html"):undefined)));
+self.addEventListener("install", event => {
+  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll([...APP_SHELL])).then(() => self.skipWaiting()));
+});
 
-  if(request.mode==="navigate"||url.pathname.endsWith("/")||url.pathname.endsWith("/index.html")||url.pathname.endsWith("data-2026.json")||url.pathname.endsWith(".js")||url.pathname.endsWith(".css")||url.pathname.endsWith(".webmanifest")){
-    event.respondWith(networkFirst());
+self.addEventListener("activate", event => {
+  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim()));
+});
+
+self.addEventListener("fetch", event => {
+  const request = event.request;
+  if(!isSafeRequest(request)) return;
+  const url = new URL(request.url);
+
+  if(request.mode === "navigate"){
+    event.respondWith(fetch(request, {cache:"no-store"}).catch(() => caches.match("./index.html")));
     return;
   }
 
-  if(["image","font"].includes(request.destination)){
-    event.respondWith(caches.match(request).then(cached=>cached||fetch(request).then(response=>{
-      if(response.ok && response.type==="basic") caches.open(CACHE).then(cache=>cache.put(request,response.clone()));
+  const key = relativeKey(url);
+  if(!APP_SHELL.has(key)) return;
+
+  event.respondWith(
+    caches.match(key).then(cached => cached || fetch(request, {cache:"no-store"}).then(response => {
+      if(response.ok && response.type === "basic") caches.open(CACHE).then(cache => cache.put(key, response.clone()));
       return response;
-    })));
-  }
+    }))
+  );
 });
