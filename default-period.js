@@ -4,7 +4,7 @@ async function applyAnnualRange(){
   if(typeof window.loadCaptaUpAnnual!=='function'){setTimeout(applyAnnualRange,120);return;}
   try{
     const p=await window.loadCaptaUpAnnual();
-    const st=p?.from||'2026-01-01',en=p?.to||'2026-08-23';
+    const st=p?.from||'2026-01-01',en=p?.to||'2026-08-29';
     const s=$('start'),e=$('end');
     if(!s||!e)return;
     s.value=st;e.value=en;
