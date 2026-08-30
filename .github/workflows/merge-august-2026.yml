@@ -1,0 +1,41 @@
+name: Atualizar agosto 2026
+
+on:
+  push:
+    paths:
+      - 'data-august-2026-dicts.json'
+      - 'data-august-2026-part*.json'
+      - 'tools/merge_august_2026.py'
+      - '.github/workflows/merge-august-2026.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Mesclar agosto mantendo histórico
+        run: python tools/merge_august_2026.py
+      - name: Validar e publicar base anual
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('data-2026.json',encoding='utf-8'))
+          assert len(d['r'])==3463
+          assert d['from']=='2026-01-01'
+          assert d['to']=='2026-08-29'
+          assert sum(1 for r in d['r'] if r[0].startswith('2026-08'))==366
+          print('Base validada:',len(d['r']),d['from'],d['to'])
+          PY
+          git config user.name "captaup-bot"
+          git config user.email "captaup-bot@users.noreply.github.com"
+          git add data-2026.json
+          if git diff --cached --quiet; then
+            echo "Sem alterações"
+          else
+            git commit -m "Atualiza agosto até 29/08 preservando histórico"
+            git push
+          fi
