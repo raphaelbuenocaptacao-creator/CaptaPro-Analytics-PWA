@@ -1,4 +1,4 @@
-const CACHE = "captaup-v50-safe-shell";
+const CACHE = "captaup-v51-safe-shell";
 const APP_SHELL = new Set(["./","./index.html","./manifest.webmanifest","./icon-192.svg","./icon-512.svg","./icon-512-maskable.svg","./captaup.css","./captaup-auth.js","./captaup-admin.js","./captaup-auth-bridge.js","./captaup-data.js","./captaup-main.js","./ranking-controls.js","./ranking-page.js","./manager-insights.js","./active-professionals.js","./default-period.js","./captaup-pwa.js","./weekly-captain.js","./engagement.js"]);
 const PRIVATE_PATH_RE = /\/(api|auth|login|logout|admin|session|sessions|token|tokens|password|account|profile|me)(\/|$)/i;
 const SENSITIVE_QUERY_RE = /^(token|access_token|refresh_token|password|passwd|secret|session|auth|authorization|api_key|apikey|key|code|credential|credentials)$/i;
@@ -13,6 +13,14 @@ function isSafeRequest(request){
   if(request.headers.has("authorization") || request.headers.has("cookie")) return false;
   const url = new URL(request.url);
   return url.origin === self.location.origin && !PRIVATE_PATH_RE.test(url.pathname) && !hasSensitiveQuery(url);
+}
+
+function isCacheableResponse(response){
+  if(!response || !response.ok || response.type !== "basic") return false;
+  const cacheControl = response.headers.get("cache-control") || "";
+  if(/(?:^|,)\s*(?:private|no-store)(?:\s|,|$)/i.test(cacheControl)) return false;
+  if(response.headers.has("set-cookie")) return false;
+  return true;
 }
 
 function relativeKey(url){
@@ -46,7 +54,7 @@ self.addEventListener("fetch", event => {
 
   event.respondWith(
     caches.match(key).then(cached => cached || fetch(request, {cache:"no-store"}).then(response => {
-      if(response.ok && response.type === "basic") caches.open(CACHE).then(cache => cache.put(key, response.clone()));
+      if(isCacheableResponse(response)) caches.open(CACHE).then(cache => cache.put(key, response.clone()));
       return response;
     }))
   );
