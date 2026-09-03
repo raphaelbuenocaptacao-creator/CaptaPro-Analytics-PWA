@@ -1,6 +1,6 @@
 const CACHE_PREFIX = "captaup-shell-";
-const CACHE = `${CACHE_PREFIX}v53-safe`;
-const APP_SHELL = new Set(["./","./index.html","./manifest.webmanifest","./icon-192.svg","./icon-512.svg","./icon-512-maskable.svg","./captaup.css","./captaup-auth.js","./captaup-admin.js","./captaup-auth-bridge.js","./captaup-data.js","./captaup-main.js","./ranking-controls.js","./ranking-page.js","./manager-insights.js","./active-professionals.js","./default-period.js","./captaup-pwa.js","./pwa-update.js","./weekly-captain.js","./engagement.js"]);
+const CACHE = `${CACHE_PREFIX}v54-safe`;
+const APP_SHELL = new Set(["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-512-maskable.png","./captaup.css","./captaup-auth.js","./captaup-admin.js","./captaup-auth-bridge.js","./captaup-data.js","./captaup-main.js","./ranking-controls.js","./ranking-page.js","./manager-insights.js","./active-professionals.js","./default-period.js","./captaup-pwa.js","./pwa-update.js","./weekly-captain.js","./engagement.js"]);
 const PRIVATE_PATH_RE = /\/(api|auth|login|logout|admin|session|sessions|token|tokens|password|account|profile|me)(\/|$)/i;
 const SENSITIVE_QUERY_RE = /^(token|access_token|refresh_token|password|passwd|secret|session|auth|authorization|api_key|apikey|key|code|credential|credentials)$/i;
 
@@ -35,7 +35,7 @@ async function precacheSafeShell(){
   const cache = await caches.open(CACHE);
   await Promise.all([...APP_SHELL].map(async key => {
     try {
-      const request = new Request(key, { credentials: "omit", cache: "no-store" });
+      const request = new Request(key, { credentials: "omit", cache: "no-store", redirect: "error" });
       const response = await fetch(request);
       if(isCacheableResponse(response)) await cache.put(key, response.clone());
     } catch (_) {
@@ -62,7 +62,7 @@ self.addEventListener("fetch", event => {
   const url = new URL(request.url);
 
   if(request.mode === "navigate"){
-    event.respondWith(fetch(request, {cache:"no-store"}).catch(() => caches.match("./index.html")));
+    event.respondWith(fetch(request, {cache:"no-store", redirect:"error"}).catch(() => caches.match("./index.html")));
     return;
   }
 
@@ -71,7 +71,7 @@ self.addEventListener("fetch", event => {
   if(!APP_SHELL.has(key)) return;
 
   event.respondWith(
-    caches.match(key).then(cached => cached || fetch(request, {cache:"no-store"}).then(response => {
+    caches.match(key).then(cached => cached || fetch(request, {cache:"no-store", redirect:"error"}).then(response => {
       if(isCacheableResponse(response)) caches.open(CACHE).then(cache => cache.put(key, response.clone()));
       return response;
     }))
