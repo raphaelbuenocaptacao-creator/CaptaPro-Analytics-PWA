@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=23-ranking-visao').catch(console.error));}
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=54-safe',{updateViaCache:'none'}).catch(console.error));}
 let deferredPrompt=null;
 let lastProfileTap=0;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;mountInstall();});
